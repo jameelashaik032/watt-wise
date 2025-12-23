@@ -5,7 +5,10 @@ import { useUser } from '@/contexts/UserContext';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, getTotalBill } = useUser();
+  const { user, savedBills, getCumulativeBill } = useUser();
+  
+  const cumulativeBill = getCumulativeBill();
+  const hasSavedBills = savedBills.length > 0;
 
   return (
     <div className="min-h-screen pb-8">
@@ -17,7 +20,7 @@ const Home = () => {
             className="relative p-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
           >
             <Save className="w-6 h-6 text-primary" />
-            {getTotalBill() > 0 && (
+            {hasSavedBills && (
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-pulse" />
             )}
           </button>
@@ -74,7 +77,7 @@ const Home = () => {
       </div>
 
       {/* Quick Stats */}
-      {getTotalBill() > 0 && (
+      {hasSavedBills && (
         <div className="fixed bottom-4 left-4 right-4 z-40">
           <button
             onClick={() => navigate('/saved-bills')}
@@ -85,8 +88,8 @@ const Home = () => {
                 <Zap className="w-5 h-5 text-accent" />
               </div>
               <div className="text-left">
-                <p className="text-sm text-muted-foreground">Total Bill</p>
-                <p className="text-lg font-bold text-accent">₹{getTotalBill().toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">Total Bill ({cumulativeBill.totalUnits.toFixed(1)} kWh)</p>
+                <p className="text-lg font-bold text-accent">₹{cumulativeBill.totalCost.toFixed(2)}</p>
               </div>
             </div>
             <span className="text-primary text-sm font-medium">View All →</span>

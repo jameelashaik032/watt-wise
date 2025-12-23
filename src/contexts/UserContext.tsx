@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { calculateCumulativeBill } from '@/utils/billingCalculator';
 
 export type LTCategory = 'LT-I' | 'LT-II';
 
@@ -18,11 +19,16 @@ export interface SavedBill {
   hours: number;
   minutes: number;
   units: number;
+  date: string;
+}
+
+export interface CumulativeBillResult {
+  totalUnits: number;
+  slabLabel: string;
+  ratePerUnit: number;
   energyCost: number;
   customerCharge: number;
   totalCost: number;
-  ratePerUnit: number;
-  date: string;
 }
 
 interface UserContextType {
@@ -33,7 +39,7 @@ interface UserContextType {
   logout: () => void;
   saveBill: (bill: Omit<SavedBill, 'id' | 'date'>) => void;
   deleteBill: (id: string) => void;
-  getTotalBill: () => number;
+  getCumulativeBill: () => CumulativeBillResult;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -141,8 +147,20 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const getTotalBill = () => {
-    return savedBills.reduce((total, bill) => total + bill.totalCost, 0);
+  const getCumulativeBill = (): CumulativeBillResult => {
+    if (!user || savedBills.length === 0) {
+      return {
+        totalUnits: 0,
+        slabLabel: user?.ltCategory === 'LT-I' ? '0–30 kWh' : '0–50 kWh',
+        ratePerUnit: user?.ltCategory === 'LT-I' ? 1.90 : 5.40,
+        energyCost: 0,
+        customerCharge: user?.ltCategory === 'LT-I' ? 25 : 30,
+        totalCost: user?.ltCategory === 'LT-I' ? 25 : 30
+      };
+    }
+    
+    const totalUnits = savedBills.reduce((sum, bill) => sum + bill.units, 0);
+    return calculateCumulativeBill(totalUnits, user.ltCategory);
   };
 
   return (
@@ -154,7 +172,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       logout,
       saveBill,
       deleteBill,
-      getTotalBill
+      getCumulativeBill
     }}>
       {children}
     </UserContext.Provider>
