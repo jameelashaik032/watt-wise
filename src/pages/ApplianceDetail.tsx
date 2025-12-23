@@ -63,11 +63,7 @@ const ApplianceDetail = () => {
       power: appliance.power,
       hours: parseInt(hours) || 0,
       minutes: parseInt(minutes) || 0,
-      units: result.units,
-      energyCost: result.energyCost,
-      customerCharge: result.customerCharge,
-      totalCost: result.totalCost,
-      ratePerUnit: result.ratePerUnit
+      units: result.units
     });
 
     toast.success('Bill saved successfully!');

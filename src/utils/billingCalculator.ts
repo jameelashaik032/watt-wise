@@ -57,3 +57,38 @@ export const calculateBill = (
     totalCost
   };
 };
+
+export const getSlabLabel = (units: number, category: LTCategory): string => {
+  if (category === 'LT-I') {
+    if (units <= 30) return '0–30 kWh';
+    if (units <= 75) return '31–75 kWh';
+    if (units <= 125) return '76–125 kWh';
+    if (units <= 225) return '126–225 kWh';
+    if (units <= 400) return '226–400 kWh';
+    return '>400 kWh';
+  } else {
+    if (units <= 50) return '0–50 kWh';
+    if (units <= 100) return '51–100 kWh';
+    if (units <= 300) return '101–300 kWh';
+    if (units <= 500) return '301–500 kWh';
+    return '>500 kWh';
+  }
+};
+
+export const calculateCumulativeBill = (totalUnits: number, category: LTCategory) => {
+  const slab = getSlabRate(totalUnits, category);
+  const slabLabel = getSlabLabel(totalUnits, category);
+  
+  const energyCost = Math.round(totalUnits * slab.energyRate * 100) / 100;
+  const customerCharge = slab.customerCharge;
+  const totalCost = Math.round((energyCost + customerCharge) * 100) / 100;
+  
+  return {
+    totalUnits: Math.round(totalUnits * 1000) / 1000,
+    slabLabel,
+    ratePerUnit: slab.energyRate,
+    energyCost,
+    customerCharge,
+    totalCost
+  };
+};
