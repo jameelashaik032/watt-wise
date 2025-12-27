@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Zap, Clock, Save, Calculator, ChevronDown, Hash, Cpu } from 'lucide-react';
+import { ArrowLeft, Zap, Clock, Save, Calculator, ChevronDown, Hash, Cpu, Minus, Plus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { appliances, ApplianceModel } from '@/data/appliances';
 import { calculateBill } from '@/utils/billingCalculator';
 import { useUser } from '@/contexts/UserContext';
@@ -16,7 +18,7 @@ interface BillResult {
   totalCost: number;
 }
 
-const QUANTITY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const MAX_QUANTITY = 25;
 
 const ApplianceDetail = () => {
   const { id } = useParams();
@@ -31,8 +33,8 @@ const ApplianceDetail = () => {
   const [minutes, setMinutes] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [selectedModel, setSelectedModel] = useState<ApplianceModel | undefined>(defaultModel);
-  const [showQuantityDropdown, setShowQuantityDropdown] = useState(false);
-  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [showQuantitySheet, setShowQuantitySheet] = useState(false);
+  const [showModelSheet, setShowModelSheet] = useState(false);
   const [result, setResult] = useState<BillResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
@@ -83,6 +85,32 @@ const ApplianceDetail = () => {
     navigate('/saved-bills');
   };
 
+  const incrementQuantity = () => {
+    if (quantity < MAX_QUANTITY) {
+      setQuantity(quantity + 1);
+      setResult(null);
+    }
+  };
+
+  const decrementQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
+      setResult(null);
+    }
+  };
+
+  const handleModelSelect = (model: ApplianceModel) => {
+    setSelectedModel(model);
+    setShowModelSheet(false);
+    setResult(null);
+  };
+
+  const handleQuantitySelect = (num: number) => {
+    setQuantity(num);
+    setShowQuantitySheet(false);
+    setResult(null);
+  };
+
   return (
     <div className="min-h-screen pb-8">
       {/* Header */}
@@ -123,42 +151,51 @@ const ApplianceDetail = () => {
             <h3 className="font-semibold">Select {appliance.name} Model / Type</h3>
           </div>
           
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowModelDropdown(!showModelDropdown);
-                setShowQuantityDropdown(false);
-              }}
-              className="w-full flex items-center justify-between p-4 rounded-xl bg-secondary/50 border border-border hover:border-primary/50 transition-colors"
-            >
-              <div className="text-left">
-                <p className="font-medium">{selectedModel?.name || 'Select Model'}</p>
-                <p className="text-sm text-muted-foreground">{effectivePower}W</p>
-              </div>
-              <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showModelDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 max-h-64 overflow-y-auto">
-                {appliance.models.map((model) => (
-                  <button
-                    key={model.id}
-                    onClick={() => {
-                      setSelectedModel(model);
-                      setShowModelDropdown(false);
-                      setResult(null);
-                    }}
-                    className={`w-full flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                      selectedModel?.id === model.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
-                    }`}
-                  >
-                    <span className={model.isDefault ? 'text-accent font-medium' : ''}>{model.name}</span>
-                    <span className="text-primary font-semibold">{model.power}W</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <Sheet open={showModelSheet} onOpenChange={setShowModelSheet}>
+            <SheetTrigger asChild>
+              <button
+                className="w-full flex items-center justify-between p-4 rounded-xl bg-secondary/50 border border-border hover:border-primary/50 transition-colors"
+              >
+                <div className="text-left">
+                  <p className="font-medium">{selectedModel?.name || 'Select Model'}</p>
+                  <p className="text-sm text-muted-foreground">{effectivePower}W</p>
+                </div>
+                <ChevronDown className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
+              <SheetHeader className="pb-4">
+                <SheetTitle>Select {appliance.name} Model / Type</SheetTitle>
+              </SheetHeader>
+              <ScrollArea className="h-[calc(70vh-100px)]">
+                <div className="space-y-2 pr-4">
+                  {appliance.models.map((model) => (
+                    <button
+                      key={model.id}
+                      onClick={() => handleModelSelect(model)}
+                      className={`w-full flex items-center justify-between p-4 rounded-xl transition-colors ${
+                        selectedModel?.id === model.id 
+                          ? 'bg-primary/20 border-2 border-primary' 
+                          : 'bg-secondary/50 border border-border hover:bg-secondary/80'
+                      }`}
+                    >
+                      <div className="text-left flex-1">
+                        <p className={`font-medium ${model.isDefault ? 'text-accent' : ''}`}>
+                          {model.name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-primary font-semibold">{model.power}W</span>
+                        {selectedModel?.id === model.id && (
+                          <Check className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {/* Quantity Selection */}
@@ -168,38 +205,58 @@ const ApplianceDetail = () => {
             <h3 className="font-semibold">How many {appliance.name}s are there?</h3>
           </div>
           
-          <div className="relative">
+          {/* Stepper Control */}
+          <div className="flex items-center justify-center gap-6">
             <button
-              onClick={() => {
-                setShowQuantityDropdown(!showQuantityDropdown);
-                setShowModelDropdown(false);
-              }}
-              className="w-full flex items-center justify-between p-4 rounded-xl bg-secondary/50 border border-border hover:border-primary/50 transition-colors"
+              onClick={decrementQuantity}
+              disabled={quantity <= 1}
+              className="w-12 h-12 rounded-full bg-secondary/50 border border-border hover:bg-secondary hover:border-primary/50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <span className="font-medium">{quantity}</span>
-              <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showQuantityDropdown ? 'rotate-180' : ''}`} />
+              <Minus className="w-5 h-5" />
             </button>
-
-            {showQuantityDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
-                {QUANTITY_OPTIONS.map((num) => (
-                  <button
-                    key={num}
-                    onClick={() => {
-                      setQuantity(num);
-                      setShowQuantityDropdown(false);
-                      setResult(null);
-                    }}
-                    className={`w-full p-3 text-left hover:bg-secondary/50 transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                      quantity === num ? 'bg-primary/10 text-primary font-semibold' : ''
-                    }`}
-                  >
-                    {num}
-                  </button>
-                ))}
-              </div>
-            )}
+            
+            <Sheet open={showQuantitySheet} onOpenChange={setShowQuantitySheet}>
+              <SheetTrigger asChild>
+                <button className="w-20 h-16 rounded-xl bg-primary/10 border-2 border-primary/50 hover:border-primary transition-colors flex items-center justify-center">
+                  <span className="text-3xl font-bold text-primary">{quantity}</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl">
+                <SheetHeader className="pb-4">
+                  <SheetTitle>Select Quantity</SheetTitle>
+                </SheetHeader>
+                <ScrollArea className="h-[calc(60vh-100px)]">
+                  <div className="grid grid-cols-5 gap-3 pr-4">
+                    {Array.from({ length: MAX_QUANTITY }, (_, i) => i + 1).map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => handleQuantitySelect(num)}
+                        className={`p-4 rounded-xl text-lg font-semibold transition-colors ${
+                          quantity === num 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-secondary/50 border border-border hover:bg-secondary/80 hover:border-primary/50'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+            
+            <button
+              onClick={incrementQuantity}
+              disabled={quantity >= MAX_QUANTITY}
+              className="w-12 h-12 rounded-full bg-secondary/50 border border-border hover:bg-secondary hover:border-primary/50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
           </div>
+          
+          <p className="text-center text-sm text-muted-foreground">
+            Tap the number to select from list
+          </p>
         </div>
 
         {/* Usage Input */}
@@ -317,17 +374,6 @@ const ApplianceDetail = () => {
           </div>
         )}
       </div>
-
-      {/* Click outside to close dropdowns */}
-      {(showModelDropdown || showQuantityDropdown) && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => {
-            setShowModelDropdown(false);
-            setShowQuantityDropdown(false);
-          }}
-        />
-      )}
     </div>
   );
 };
