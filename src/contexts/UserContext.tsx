@@ -16,6 +16,8 @@ export interface SavedBill {
   applianceName: string;
   applianceIcon: string;
   power: number;
+  modelName: string;
+  quantity: number;
   hours: number;
   minutes: number;
   units: number;
