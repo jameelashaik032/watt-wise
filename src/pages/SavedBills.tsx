@@ -114,7 +114,10 @@ const SavedBills = () => {
                     <div>
                       <h3 className="font-semibold">{bill.applianceName}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {bill.units.toFixed(3)} kWh • {bill.hours}h {bill.minutes}m
+                        {bill.quantity > 1 ? `${bill.quantity} × ` : ''}{bill.power}W • {bill.units.toFixed(3)} kWh
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {bill.modelName} • {bill.hours}h {bill.minutes}m
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {format(new Date(bill.date), 'MMM dd, yyyy • hh:mm a')}
